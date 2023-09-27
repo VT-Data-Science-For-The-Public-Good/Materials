@@ -5,7 +5,7 @@
 
 Notes: You can comment out unnecessary tabs
 
-The app_templates.R is the simplified version if you are new to R Shiny. This template is modified from 2022 VT DSPG LandUse project. **The app.R if the original R file.**
+The app_templates.R is the simplified version if you are new to R Shiny. This template is modified from 2022 VT DSPG LandUse project. **The app.R is the original R file. Please delete this file when you try to deploy the App.**
 
 # File Structure
 - **\*.R** is the script for your Shiny App
