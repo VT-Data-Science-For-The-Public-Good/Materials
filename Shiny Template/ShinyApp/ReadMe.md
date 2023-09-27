@@ -14,6 +14,6 @@ The app_templates.R is the simplified version if you are new to R Shiny. This te
 - You are free to write your function in a R file and call it in your app.  Example: https://stackoverflow.com/questions/13548266/define-all-functions-in-one-r-file-call-them-from-another-r-file-how-if-pos
 
 
-# introduction to Shiny
+# Training videos: Introduction to Shiny
 https://virginiatech.sharepoint.com/:f:/s/2021VT-DSPG/Em2tVURDbv1Fs68c-nx8hRkBal9qjEvNYjJk3mobsqQncA?e=AKZnm7
 
