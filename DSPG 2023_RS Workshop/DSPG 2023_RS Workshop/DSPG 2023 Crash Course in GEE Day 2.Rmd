@@ -1,0 +1,62 @@
+```{r setup, message = FALSE, warning=FALSE, fig.align='center'}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(moderndive)
+library(readr)
+library(tidyr)
+library(lubridate)
+library(stringr)
+library(sf)
+library(tidyverse)
+library(zoo)
+library(scales)
+library(ggplot2)
+library(viridis)
+rm(list = ls())
+```
+
+```{r}
+setwd("") #when you copy the path, change "\" to "/"
+```
+
+```{r}
+datadiv <- read_csv("BGDFlood_2017.csv") %>%
+dplyr::rename(floodext = sum) %>%
+dplyr::rename(Division = ADM1_EN) 
+```
+
+```{r}
+FloodMap <-function(season){
+  
+  flooddiv <- data.frame(datadiv) %>% 
+  group_by(Division) %>% 
+  dplyr::summarize(flood = round(sum(floodext, na.rm = TRUE),0))     
+
+ divshp <- st_read("bgd_admbnda_adm1_bbs_20201113.shp") 
+ divshp <-dplyr::rename(divshp, Division = ADM1_EN)
+ df_list <- list(divshp, flooddiv)
+
+ map <- df_list %>% reduce(full_join, by='Division')
+  
+  
+   ggplot(data = map) +
+     geom_sf(size = 0.15, color = "black", aes(fill = flood)) +
+    xlab("Longitude") + ylab("Latitude") +
+   coord_sf() +
+    scale_fill_viridis(option = "viridis", direction = -1) +
+     ggtitle(season) + guides(fill=guide_legend(title="Flood Extent (sq m)"))
+}
+```
+
+```{r}
+season = "Flood Extent (sq m)"
+map2017 <- FloodMap(season)
+
+```
+
+```{r}
+map2017
+```

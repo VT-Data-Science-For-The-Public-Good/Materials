@@ -1,0 +1,230 @@
+```{r setup, message = FALSE, warning=FALSE, fig.align='center'}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(moderndive)
+library(readr)
+library(tidyr)
+library(lubridate)
+library(stringr)
+library(sf)
+library(tidyverse)
+library(zoo)
+library(scales)
+library(ggplot2)
+library(viridis)
+rm(list = ls())
+```
+
+```{r}
+setwd("") #when you copy the path, change "\" to "/"
+```
+
+
+```{r}
+data18_long <- gather(as.data.frame(read_csv("EVI_BGDDiv_2018.csv")), Date, EVI, '2018_01_01_EVI': '2018_12_19_EVI') %>%
+  dplyr::select(Date, EVI, ADM1_EN) %>%
+  dplyr::rename(Division = ADM1_EN) %>%
+  separate( col=Date, into=c('year','month','date', 'useless1'), sep='_') %>%
+  dplyr::select(-useless1)
+```
+
+```{r}
+maxevi18_long <- data18_long %>% group_by(Division) %>% summarise(MaxEVI = max(EVI, na.rm = TRUE))
+maxevi18_long$MaxEVI <- maxevi18_long$MaxEVI*0.0001  #re-scale the data
+```
+
+```{r}
+#write.csv(max18_long,"BGD_MaxEVI_2018.csv", row.names = FALSE) 
+```
+
+
+```{r}
+EVIMap <-function(season){
+  
+  evidiv <- data.frame(maxevi18_long) %>% 
+  group_by(Division)     
+
+ divshp <- st_read("bgd_admbnda_adm1_bbs_20201113.shp") 
+ divshp <-dplyr::rename(divshp, Division = ADM1_EN)
+ df_list <- list(divshp, evidiv)
+
+ #merge all data frames in list - note this is now a shapefile so can map
+ map <- df_list %>% reduce(full_join, by='Division')
+  
+  
+   ggplot(data = map) +
+     geom_sf(size = 0.15, color = "black", aes(fill = MaxEVI)) +
+    xlab("Longitude") + ylab("Latitude") +
+   coord_sf() +
+    scale_fill_viridis(option = "viridis", direction = -1,limits = c(0.38, 0.5)) +
+     ggtitle(season) + guides(fill=guide_legend(title="EVI"))
+}
+```
+
+
+```{r}
+season = "EVI, 2018"
+map2018 <- EVIMap(season)
+```
+
+```{r}
+map2018
+```
+
+
+```{r}
+maxevimonth18_long <- data18_long %>% group_by(month, Division) %>% summarise(MonthMaxEVI = max(EVI, na.rm = TRUE))
+maxevimonth18_long$MonthMaxEVI <- maxevimonth18_long$MonthMaxEVI*0.0001  #re-scale the data
+```
+
+```{r}
+#write.csv(max18_long,"BGD_MaxMonthEVI_2018.csv", row.names = FALSE) 
+```
+
+```{r}
+EVIJanMap <-function(season){
+  
+  evijandiv <- data.frame(maxevimonth18_long) %>% 
+  group_by(month, Division) %>% 
+  filter(month=="01") 
+  
+ divshp <- st_read("bgd_admbnda_adm1_bbs_20201113.shp") 
+ divshp <-dplyr::rename(divshp, Division = ADM1_EN)
+ df_list <- list(divshp, evijandiv)
+
+ #merge all data frames in list - note this is now a shapefile so can map
+ map <- df_list %>% reduce(full_join, by='Division')
+  
+  
+   ggplot(data = map) +
+     geom_sf(size = 0.15, color = "black", aes(fill = MonthMaxEVI)) +
+    xlab("Longitude") + ylab("Latitude") +
+   coord_sf() +
+    scale_fill_viridis(option = "viridis", direction = -1,limits = c(0.2, 0.7)) +
+     ggtitle(season) + guides(fill=guide_legend(title="EVI January"))
+}
+```
+
+```{r}
+season = "EVI, Jan 2018"
+mapjan2018 <- EVIJanMap(season)
+```
+
+```{r}
+mapjan2018
+```
+
+
+#Practice with Hanover County - visualize max EVI
+
+```{r}
+data20_long <- gather(as.data.frame(read_csv("EVI_HanPar_2020.csv")), Date, EVI, '2020_01_01_EVI': '2020_12_18_EVI') %>%
+  dplyr::select(Date, EVI, OBJECTID) %>%
+  dplyr::rename(Parcels = OBJECTID) %>%
+  separate( col=Date, into=c('year','month','date', 'useless1'), sep='_') %>%
+  dplyr::select(-useless1)
+```
+
+```{r}
+maxevi20_long <- data20_long %>% group_by(Parcels) %>% summarise(MaxEVI = max(EVI, na.rm = TRUE))
+maxevi20_long$MaxEVI <- maxevi20_long$MaxEVI*0.0001  #re-scale the data
+```
+
+```{r}
+EVIMap <-function(season){
+  
+  evihan <- data.frame(maxevi20_long) %>% 
+  group_by(Parcels)     
+
+ hanshp <- st_read("Hanover_Parcels.shp") 
+ hanshp <-dplyr::rename(hanshp, Parcels = OBJECTID)
+ df_list <- list(hanshp, evihan)
+
+ #merge all data frames in list - note this is now a shapefile so can map
+ map <- df_list %>% reduce(full_join, by='Parcels')
+  
+  
+   ggplot(data = map) +
+     geom_sf(size = 0.15, color = "black", aes(fill = MaxEVI)) +
+    xlab("Longitude") + ylab("Latitude") +
+   coord_sf() +
+    scale_fill_viridis(option = "viridis", direction = -1,limits = c(0.4, 0.9)) +
+     ggtitle(season) + guides(fill=guide_legend(title="EVI"))
+}
+```
+
+```{r}
+season = "EVI, 2020"
+map2020 <- EVIMap(season)
+```
+
+```{r}
+map2020
+```
+
+
+
+
+#Precipitation: CHIRPS, 2017
+```{r}
+precip17_long <- gather(as.data.frame(read_csv("PRECIP_Bangladesh2017.csv")), Date, Precipitation, '20170101_precipitation': '20171226_precipitation') %>%
+  dplyr::select(Date, Precipitation, ADM1_EN) %>%
+  dplyr::rename(Division = ADM1_EN) %>%
+  separate( col=Date, into=c('Date', 'useless'), sep='_') %>%
+  dplyr::select(-useless)
+```
+
+```{r}
+precip17_long$newDate <- as.Date(precip17_long$Date, "%Y%m%d")
+precip17_long$month <- format(precip17_long$newDate, "%m")
+```
+
+```{r}
+sumprecip17_long <- precip17_long %>% group_by(month, Division) %>% summarise(MonthPRECIP = sum(Precipitation, na.rm = TRUE))
+```
+
+```{r}
+precipmap <-function(season){
+  
+ precipdiv <- data.frame(sumprecip17_long) %>% 
+  #filter(RainDat$year==yyear) %>% 
+  group_by(month, Division) %>% 
+  filter(month=="07") #%>% 
+  #group_by(Region)  %>% 
+  #dplyr::summarize(vhi = round(sum(vhi_2007, na.rm = TRUE),0))     
+
+ divshp <- st_read("bgd_admbnda_adm1_bbs_20201113.shp") #SHAPE files Shiny app
+ divshp <-dplyr::rename(divshp, Division = ADM1_EN)
+ df_list <- list(divshp, precipdiv)
+
+ #merge all data frames in list - note this is now a SHAPE file so can map
+ map <- df_list %>% reduce(full_join, by='Division')
+  
+  
+   ggplot(data = map) +
+     geom_sf(size = 0.15, color = "black", aes(fill = MonthPRECIP)) +
+    xlab("Longitude") + ylab("Latitude") +
+   coord_sf() +
+    scale_fill_viridis(option = "viridis", direction = -1,limits = c(500, 1050)) +
+     ggtitle(season) + guides(fill=guide_legend(title="Precipitation, July 2017"))
+}
+```
+
+
+```{r}
+season = "Precipitation, July 2017"
+mapjul2017 <- precipmap(season)
+```
+
+```{r}
+mapjul2017
+```
+
+
+
+
+
+
